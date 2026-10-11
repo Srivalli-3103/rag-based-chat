@@ -22,7 +22,7 @@ from orchestrator import answer_question
 
 load_dotenv()  # reads backend/.env into environment variables
 
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
 app = FastAPI(title="RAG Document Chat API")
 
@@ -77,12 +77,12 @@ async def upload_document(file: UploadFile = File(...)):
 
 @app.post("/chat")
 def chat(request: ChatRequest):
-    if not ANTHROPIC_API_KEY:
-        raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY is not set on the server.")
+    if not GROQ_API_KEY:
+        raise HTTPException(status_code=500, detail="GROQ_API_KEY is not set on the server.")
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
 
-    result = answer_question(request.question, api_key=ANTHROPIC_API_KEY)
+    result = answer_question(request.question, api_key=GROQ_API_KEY)
     return result
 
 

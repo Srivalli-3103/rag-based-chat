@@ -4,9 +4,9 @@ tools.py — Tools the model is allowed to call (the "tool integration" concept)
 HOW TOOL CALLING WORKS:
   1. We describe a tool to the model (name, what it does, input schema).
   2. The model decides, mid-answer, that it needs it and replies with a
-     `tool_use` block: "call calculate with expression='1299 * 0.85'".
+     `tool_call`: "call calculate with expression='1299 * 0.85'".
   3. THE MODEL DOES NOT RUN ANYTHING. Our code runs the function.
-  4. We send the result back as a `tool_result`, and the model continues.
+  4. We send the result back as a tool result message, and the model continues.
 
 WHY A CALCULATOR?
   Language models predict text; they are unreliable at arithmetic. If a policy
@@ -22,22 +22,26 @@ SECURITY NOTE (a common interview question):
 import ast
 import operator
 
+# OpenAI-compatible function-calling schema (Groq uses this same shape).
 CALCULATE_TOOL = {
-    "name": "calculate",
-    "description": (
-        "Evaluate a basic arithmetic expression exactly. Use this for any "
-        "calculation (totals, percentages, fees, date-free math) instead of "
-        "computing in your head. Supports + - * / // % ** and parentheses."
-    ),
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "expression": {
-                "type": "string",
-                "description": "Arithmetic expression, e.g. '4299 * 0.15' or '(1200 + 800) / 4'",
-            }
+    "type": "function",
+    "function": {
+        "name": "calculate",
+        "description": (
+            "Evaluate a basic arithmetic expression exactly. Use this for any "
+            "calculation (totals, percentages, fees, date-free math) instead of "
+            "computing in your head. Supports + - * / // % ** and parentheses."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "expression": {
+                    "type": "string",
+                    "description": "Arithmetic expression, e.g. '4299 * 0.15' or '(1200 + 800) / 4'",
+                }
+            },
+            "required": ["expression"],
         },
-        "required": ["expression"],
     },
 }
 

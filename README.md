@@ -72,7 +72,7 @@ Browser (React + Vite)
 FastAPI backend (one process)
       ├── vector_store.py  (in-memory, numpy)
       ├── Voyage AI API    (embeddings)
-      └── Anthropic API    (Claude — reasoning, tool calls, structured output)
+      └── Groq API         (Llama — reasoning, tool calls, structured output)
 ```
 
 Monorepo, monolithic backend — deliberately simple. Micro-frontends and
@@ -90,6 +90,10 @@ cp .env.example .env            # then fill in your real API keys
 uvicorn main:app --reload --port 8000
 ```
 
+This project uses **Groq** (free, no credit card) for the chat/reasoning model
+instead of a paid API — Groq exposes an OpenAI-compatible endpoint, so the
+backend uses the `openai` SDK pointed at Groq's `base_url`.
+
 ### Frontend
 ```bash
 cd frontend
@@ -100,9 +104,9 @@ npm run dev                     # runs on http://localhost:5173
 Open `http://localhost:5173`, upload a `.txt` or `.pdf`, and start asking
 questions.
 
-### Required API keys (both free-tier available)
-- `ANTHROPIC_API_KEY` — console.anthropic.com
-- `VOYAGE_API_KEY` — voyageai.com
+### Required API keys (both free, no credit card needed)
+- `GROQ_API_KEY` — console.groq.com (chat/reasoning model)
+- `VOYAGE_API_KEY` — voyageai.com (embeddings)
 
 ## API reference
 

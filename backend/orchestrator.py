@@ -4,26 +4,33 @@ a user's question into a grounded, structured answer.
 
 THE SEQUENCE:
   1. RETRIEVE  — search the vector store for the most relevant document chunks.
-  2. REASON    — send those chunks + the question to Claude, with a tool available.
-  3. TOOL LOOP — if Claude asks to call `calculate`, run it and hand the result back.
-                 This can repeat (Claude might ask for more than one calculation).
-  4. STRUCTURE — Claude is instructed to answer in a strict JSON shape so the
-                 frontend can render it reliably instead of parsing free text.
+  2. REASON    — send those chunks + the question to the model, with a tool available.
+  3. TOOL LOOP — if the model asks to call `calculate`, run it and hand the result back.
+                 This can repeat (the model might ask for more than one calculation).
+  4. STRUCTURE — the model is instructed (and forced, via JSON mode) to answer
+                 in a strict JSON shape so the frontend can render it reliably.
 
 WHY NOT JUST ONE BIG PROMPT WITH EVERYTHING?
   Each step has a distinct, checkable job. Separating them means: if an answer
   is wrong, you can tell whether retrieval found the wrong chunks (bad context)
-  or Claude reasoned poorly over the right chunks (bad reasoning) — a single
+  or the model reasoned poorly over the right chunks (bad reasoning) — a single
   monolithic call gives you no way to isolate which part failed.
+
+USING GROQ (FREE) INSTEAD OF A PAID API:
+  Groq exposes an OpenAI-compatible endpoint, so we use the `openai` Python
+  SDK but point it at Groq's base_url. This is a common real-world pattern —
+  many providers (Groq, Together, Fireworks) are OpenAI-API-compatible, so
+  code written against that shape is portable across them.
 """
 
 import json
-from anthropic import Anthropic
+from openai import OpenAI
 
 from vector_store import store
 from tools import CALCULATE_TOOL, run_tool
 
-MODEL = "claude-sonnet-4-6"
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+MODEL = "llama-3.3-70b-versatile"  # free on Groq; check console.groq.com for current model names
 MAX_TOOL_ROUNDS = 3  # safety cap so a confused model can't loop forever
 
 SYSTEM_PROMPT = """You are a document Q&A assistant. You answer questions using \
@@ -42,7 +49,7 @@ exact shape, and nothing else — no markdown fences, no preamble:
 
 
 def _build_context_block(chunks) -> str:
-    """Numbers each retrieved chunk so Claude can cite them as [1], [2], etc.,
+    """Numbers each retrieved chunk so the model can cite them as [1], [2], etc.,
     and so we can map those numbers back to real sources for the frontend."""
     parts = []
     for i, chunk in enumerate(chunks, start=1):
@@ -51,9 +58,9 @@ def _build_context_block(chunks) -> str:
 
 
 def _parse_structured_response(text: str) -> dict:
-    """Claude is instructed to return raw JSON, but models sometimes wrap it
+    """The model is instructed to return raw JSON, but models sometimes wrap it
     in ```json fences anyway — strip those defensively before parsing."""
-    cleaned = text.strip()
+    cleaned = (text or "").strip()
     if cleaned.startswith("```"):
         cleaned = cleaned.strip("`")
         if cleaned.startswith("json"):
@@ -68,7 +75,7 @@ def _parse_structured_response(text: str) -> dict:
 def answer_question(question: str, api_key: str) -> dict:
     """Runs the full retrieve -> reason -> tool-loop -> structure pipeline.
     Returns a dict ready to send to the frontend as JSON."""
-    client = Anthropic(api_key=api_key)
+    client = OpenAI(api_key=api_key, base_url=GROQ_BASE_URL)
 
     # --- Step 1: RETRIEVE ---
     retrieved_chunks = store.search(question, top_k=4)
@@ -83,38 +90,52 @@ def answer_question(question: str, api_key: str) -> dict:
     context_block = _build_context_block(retrieved_chunks)
     user_message = f"{context_block}\n\nQuestion: {question}"
 
-    messages = [{"role": "user", "content": user_message}]
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": user_message},
+    ]
 
     # --- Step 2 & 3: REASON, with a TOOL LOOP ---
     final_text = None
     for _ in range(MAX_TOOL_ROUNDS):
-        response = client.messages.create(
+        response = client.chat.completions.create(
             model=MODEL,
-            max_tokens=1024,
-            system=SYSTEM_PROMPT,
-            tools=[CALCULATE_TOOL],
             messages=messages,
+            tools=[CALCULATE_TOOL],
+            response_format={"type": "json_object"},  # forces valid JSON on the final answer
         )
 
-        if response.stop_reason == "tool_use":
-            # Claude wants to call a tool. Append its request to the conversation,
-            # run every tool call it asked for, and append the results.
-            messages.append({"role": "assistant", "content": response.content})
+        choice = response.choices[0]
+        message = choice.message
 
-            tool_results = []
-            for block in response.content:
-                if block.type == "tool_use":
-                    result = run_tool(block.name, block.input)
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": block.id,
-                        "content": result,
-                    })
-            messages.append({"role": "user", "content": tool_results})
-            continue  # loop back: send the tool result, let Claude continue reasoning
+        if choice.finish_reason == "tool_calls" and message.tool_calls:
+            # The model wants to call one or more tools. Append its request to the
+            # conversation, run every tool call, and append each result.
+            messages.append({
+                "role": "assistant",
+                "content": message.content,
+                "tool_calls": [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {"name": tc.function.name, "arguments": tc.function.arguments},
+                    }
+                    for tc in message.tool_calls
+                ],
+            })
+
+            for tc in message.tool_calls:
+                tool_args = json.loads(tc.function.arguments)
+                result = run_tool(tc.function.name, tool_args)
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tc.id,
+                    "content": result,
+                })
+            continue  # loop back: let the model continue reasoning with the tool result
 
         # Not a tool call -> this is the final answer.
-        final_text = "".join(block.text for block in response.content if block.type == "text")
+        final_text = message.content
         break
 
     if final_text is None:
@@ -123,7 +144,7 @@ def answer_question(question: str, api_key: str) -> dict:
     # --- Step 4: STRUCTURE ---
     parsed = _parse_structured_response(final_text)
 
-    # Map Claude's cited excerpt numbers back to real chunk data for the frontend.
+    # Map the model's cited excerpt numbers back to real chunk data for the frontend.
     cited_sources = []
     for n in parsed.get("sources", []):
         if isinstance(n, int) and 1 <= n <= len(retrieved_chunks):
