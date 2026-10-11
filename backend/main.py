@@ -11,19 +11,22 @@ ENDPOINTS:
 import os
 import io
 
+from dotenv import load_dotenv
+load_dotenv()  # MUST run before importing vector_store below — VectorStore
+                # reads VOYAGE_API_KEY from the environment at import time
+                # (when the module-level `store = VectorStore()` runs), so if
+                # load_dotenv() ran after that import, the key wouldn't exist
+                # in os.environ yet and the client would silently stay unset.
+
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pypdf import PdfReader
-from dotenv import load_dotenv
 
 from vector_store import store
 from orchestrator import answer_question
 
-load_dotenv()  # reads backend/.env into environment variables
-
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
-
 app = FastAPI(title="RAG Document Chat API")
 
 # CORS: allows the frontend (running on a different port during dev, e.g.

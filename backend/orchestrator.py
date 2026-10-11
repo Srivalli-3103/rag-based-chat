@@ -30,7 +30,7 @@ from vector_store import store
 from tools import CALCULATE_TOOL, run_tool
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
-MODEL = "llama-3.3-70b-versatile"  # free on Groq; check console.groq.com for current model names
+MODEL = "openai/gpt-oss-20b"  # free on Groq; check console.groq.com for current model names
 MAX_TOOL_ROUNDS = 3  # safety cap so a confused model can't loop forever
 
 SYSTEM_PROMPT = """You are a document Q&A assistant. You answer questions using \
@@ -99,12 +99,16 @@ def answer_question(question: str, api_key: str) -> dict:
     final_text = None
     for _ in range(MAX_TOOL_ROUNDS):
         response = client.chat.completions.create(
-            model=MODEL,
-            messages=messages,
-            tools=[CALCULATE_TOOL],
-            response_format={"type": "json_object"},  # forces valid JSON on the final answer
+          model=MODEL,
+          messages=messages,
+          tools=[CALCULATE_TOOL],
+    # NOTE: Groq rejects response_format={"type": "json_object"} when
+    # `tools` is also present in the same request ("json mode cannot
+    # be combined with tool/function calling"). So JSON structure is
+    # enforced only via the SYSTEM_PROMPT instructions above, not a
+    # hard API constraint — _parse_structured_response() below
+    # degrades gracefully if the model doesn't comply perfectly.
         )
-
         choice = response.choices[0]
         message = choice.message
 

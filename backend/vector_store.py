@@ -1,5 +1,4 @@
-"""
-vector_store.py — The RAG core: chunking, embedding, and similarity search.
+"""vector_store.py — The RAG core: chunking, embedding, and similarity search.
 
 WHY THIS FILE EXISTS:
 An LLM can't "read" a 50-page document in one go effectively, and you don't want
@@ -13,8 +12,7 @@ Instead, RAG (Retrieval-Augmented Generation) works like this:
   4. Find the chunks whose vectors are most similar to the question's vector.
   5. Only send THOSE chunks to the LLM, not the whole document.
 
-This file implements steps 1, 2, and 4.
-"""
+This file implements steps 1, 2, and 4."""
 
 import os
 import re
