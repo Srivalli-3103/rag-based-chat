@@ -132,3 +132,6 @@ owned by backend/AI engineers and exposed to the frontend as an API. The
 frontend (`App.jsx`) is the part that reflects actual day-to-day
 Frontend+AI work: consuming an AI-backed API, handling its unpredictability
 gracefully, and rendering structured AI output as real UI.
+# rag-based-chat
+Upload a document, ask questions about it, get answers grounded in that document (Retrieval-Augmented Generation). This one tests retrieval/embeddings.
+Stack: React frontend pattern + FastAPI backend + a vector store
