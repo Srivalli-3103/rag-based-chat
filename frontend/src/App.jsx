@@ -9,8 +9,8 @@ const API_BASE = "http://localhost:8000";
  * and turning structured JSON (answer/sources/confidence) into real UI.
  */
 export default function App() {
-  const [documents, setDocuments] = useState([]); // [{name, chunkCount}]
-  const [messages, setMessages] = useState([]);   // [{role, text, sources, confidence, error}]
+  const [documents, setDocuments] = useState([]); 
+  const [messages, setMessages] = useState([]);   
   const [input, setInput] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
@@ -36,7 +36,6 @@ export default function App() {
 
       setDocuments((prev) => [...prev, { name: data.filename, chunkCount: data.chunks_created }]);
     } catch (err) {
-      // Network errors (backend not running) land here too, not just API errors.
       setUploadError(err.message || "Could not reach the server.");
     } finally {
       setIsUploading(false);

@@ -52,7 +52,7 @@ def chunk_text(text: str, doc_name: str, chunk_size: int = 800, overlap: int = 1
     halves. Overlap means each chunk shares some text with its neighbor, so
     an idea near a chunk boundary is still captured whole in at least one chunk.
     """
-    words = re.findall(r"\S+", text)  # split on whitespace, keep words intact
+    words = re.findall(r"\S+", text)  
     if not words:
         return []
 
