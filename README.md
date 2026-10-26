@@ -4,9 +4,7 @@ A RAG (Retrieval-Augmented Generation) app: upload a document, ask questions,
 get answers grounded in that document with citations back to the exact
 excerpts used.
 
-Built as a learning + portfolio project to go from "I studied RAG in a
-certification course" to "I built RAG and can explain every design decision
-in it" — for a Frontend Developer transitioning toward Frontend+AI roles.
+Built as a learning + portfolio project
 
 ## Concept → code map
 
@@ -22,7 +20,7 @@ in it" — for a Frontend Developer transitioning toward Frontend+AI roles.
 | Frontend: rendering structured AI output | `frontend/src/App.jsx` | `MessageBubble` — turns `sources[]` into citation footnotes |
 | Frontend: upload UX | `frontend/src/App.jsx` | `handleFile`, drag/drop handlers |
 
-## Why these design choices (the questions an interviewer will ask)
+## Why these design choices
 
 **Why 800-word chunks with 150-word overlap?**
 Small chunks lose surrounding context; very large chunks dilute the
