@@ -4,7 +4,7 @@ A RAG (Retrieval-Augmented Generation) app: upload a document, ask questions,
 get answers grounded in that document with citations back to the exact
 excerpts used.
 
-Built as a learning + portfolio project.
+Built as a learning + portfolio project
 
 ## Concept → code map
 
