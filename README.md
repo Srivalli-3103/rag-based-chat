@@ -1,4 +1,4 @@
-# Marginnote — Chat With Your Document
+# Chat With Your Document
 
 A RAG (Retrieval-Augmented Generation) app: upload a document, ask questions,
 get answers grounded in that document with citations back to the exact
@@ -8,17 +8,14 @@ Built as a learning + portfolio project
 
 ## Concept → code map
 
-| Concept | File | What to look at |
-|---|---|---|
-| Chunking | `backend/vector_store.py` | `chunk_text()` — word-based, 800-word chunks, 150-word overlap |
-| Embeddings | `backend/vector_store.py` | `VectorStore.embed_text()` — Voyage AI `voyage-3.5` |
-| Semantic search / RAG retrieval | `backend/vector_store.py` | `VectorStore.search()` — cosine similarity over all stored chunks |
-| Tool integration | `backend/tools.py` | `CALCULATE_TOOL` schema + `calculate()` — AST-based, not `eval()` |
-| Orchestration | `backend/orchestrator.py` | `answer_question()` — retrieve → reason → tool loop → structure |
-| Structured outputs | `backend/orchestrator.py` | `SYSTEM_PROMPT` + `_parse_structured_response()` |
-| Frontend: loading/error states | `frontend/src/App.jsx` | `isThinking`, `isUploading`, `uploadError` state |
-| Frontend: rendering structured AI output | `frontend/src/App.jsx` | `MessageBubble` — turns `sources[]` into citation footnotes |
-| Frontend: upload UX | `frontend/src/App.jsx` | `handleFile`, drag/drop handlers |
+Chunking  `backend/vector_store.py` `chunk_text()` — word-based, 800-word chunks, 150-word overlap
+Embeddings `backend/vector_store.py` `VectorStore.embed_text()` — Voyage AI `voyage-3.5`
+Semantic search / RAG retrieval `backend/vector_store.py` `VectorStore.search()` — cosine similarity over all stored chunks
+Tool integration `backend/tools.py` `CALCULATE_TOOL` schema + `calculate()` — AST-based, not `eval()`
+Orchestration `backend/orchestrator.py` `answer_question()` — retrieve → reason → tool loop → structure
+Structured outputs `backend/orchestrator.py` `SYSTEM_PROMPT` + `_parse_structured_response()`
+Frontend: loading/error states `frontend/src/App.jsx` `isThinking`, `isUploading`, `uploadError` state
+Frontend: rendering structured AI output `frontend/src/App.jsx` `MessageBubble` — turns `sources[]` into citation footnotes
 
 ## Why these design choices
 
@@ -73,8 +70,7 @@ FastAPI backend (one process)
       └── Groq API         (Llama — reasoning, tool calls, structured output)
 ```
 
-Monorepo, monolithic backend — deliberately simple. Micro-frontends and
-microservices are enterprise-scale patterns this project doesn't need.
+Monorepo, monolithic backend.
 
 ## Setup
 
@@ -88,7 +84,7 @@ cp .env.example .env            # then fill in your real API keys
 uvicorn main:app --reload --port 8000
 ```
 
-This project uses **Groq** (free, no credit card) for the chat/reasoning model
+This project uses **Groq** (free) for the chat/reasoning model
 instead of a paid API — Groq exposes an OpenAI-compatible endpoint, so the
 backend uses the `openai` SDK pointed at Groq's `base_url`.
 
@@ -102,24 +98,10 @@ npm run dev                     # runs on http://localhost:5173
 Open `http://localhost:5173`, upload a `.txt` or `.pdf`, and start asking
 questions.
 
-### Required API keys (both free, no credit card needed)
+### Required API keys 
 - `GROQ_API_KEY` — console.groq.com (chat/reasoning model)
 - `VOYAGE_API_KEY` — voyageai.com (embeddings)
 
-## API reference
-
-```bash
-# Health check
-curl http://localhost:8000/health
-
-# Upload a document
-curl -F "file=@yourdoc.pdf" http://localhost:8000/upload
-
-# Ask a question
-curl -X POST http://localhost:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is the refund window?"}'
-```
 
 ## What this project is, honestly
 
@@ -130,6 +112,7 @@ owned by backend/AI engineers and exposed to the frontend as an API. The
 frontend (`App.jsx`) is the part that reflects actual day-to-day
 Frontend+AI work: consuming an AI-backed API, handling its unpredictability
 gracefully, and rendering structured AI output as real UI.
+
 # rag-based-chat
 Upload a document, ask questions about it, get answers grounded in that document (Retrieval-Augmented Generation). This one tests retrieval/embeddings.
 Stack: React frontend pattern + FastAPI backend + a vector store

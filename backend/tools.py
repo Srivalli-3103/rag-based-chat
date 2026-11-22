@@ -1,28 +1,6 @@
-"""
-tools.py — Tools the model is allowed to call (the "tool integration" concept).
-
-HOW TOOL CALLING WORKS:
-  1. We describe a tool to the model (name, what it does, input schema).
-  2. The model decides, mid-answer, that it needs it and replies with a
-     `tool_call`: "call calculate with expression='1299 * 0.85'".
-  3. THE MODEL DOES NOT RUN ANYTHING. Our code runs the function.
-  4. We send the result back as a tool result message, and the model continues.
-
-WHY A CALCULATOR?
-  Language models predict text; they are unreliable at arithmetic. If a policy
-  says "15% restocking fee on a 4,299 rupee item", we want an exact number from
-  real code, not a guess.
-
-SECURITY NOTE (a common interview question):
-  The model's input is untrusted text. Using Python's eval() on it would let a
-  prompt-injected document run arbitrary code. Instead we parse the expression
-  into an AST and only allow plain arithmetic nodes.
-"""
-
 import ast
 import operator
 
-# OpenAI-compatible function-calling schema (Groq uses this same shape).
 CALCULATE_TOOL = {
     "type": "function",
     "function": {
@@ -56,7 +34,7 @@ _BINARY_OPS = {
 }
 _UNARY_OPS = {ast.UAdd: operator.pos, ast.USub: operator.neg}
 
-MAX_EXPONENT = 100  # stops things like 9**9**9 from freezing the server
+MAX_EXPONENT = 100
 
 
 def _eval_node(node):
@@ -74,9 +52,8 @@ def _eval_node(node):
 
 
 def calculate(expression: str) -> str:
-    """Returns the result as a string, or an 'Error: ...' string the model can read and react to."""
     try:
-        cleaned = expression.replace(",", "").strip()  # tolerate "4,299"
+        cleaned = expression.replace(",", "").strip() 
         tree = ast.parse(cleaned, mode="eval")
         result = _eval_node(tree.body)
         if isinstance(result, float):
@@ -84,12 +61,11 @@ def calculate(expression: str) -> str:
         return str(result)
     except ZeroDivisionError:
         return "Error: division by zero"
-    except Exception as exc:  # syntax errors, disallowed nodes, overflow
+    except Exception as exc:  
         return f"Error: {exc}"
 
 
 def run_tool(name: str, tool_input: dict) -> str:
-    """Dispatcher: maps a tool name from the model to the real Python function."""
     if name == "calculate":
         return calculate(tool_input.get("expression", ""))
     return f"Error: unknown tool '{name}'"

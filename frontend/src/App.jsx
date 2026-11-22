@@ -3,10 +3,7 @@ import { useState, useRef } from "react";
 const API_BASE = "http://localhost:8000";
 
 /**
- * This is the piece that's actually "your job" in a Frontend+AI role: the
- * backend already did retrieval + reasoning + tool calling (see orchestrator.py).
- * Everything below is about presenting that well — loading states, errors,
- * and turning structured JSON (answer/sources/confidence) into real UI.
+ * backend already did retrieval + reasoning + tool calling in orchestrator.py
  */
 export default function App() {
   const [documents, setDocuments] = useState([]); 
