@@ -1,22 +1,8 @@
-"""
-main.py — The FastAPI app. This is the thin layer that exposes our RAG logic
-as HTTP endpoints the React frontend calls.
-
-ENDPOINTS:
-  POST /upload   — accepts a .txt or .pdf, chunks + embeds it, stores it
-  POST /chat     — runs the full orchestration pipeline for a question
-  GET  /health   — simple liveness check (useful once this is deployed)
-"""
-
 import os
 import io
 
 from dotenv import load_dotenv
-load_dotenv()  # MUST run before importing vector_store below — VectorStore
-                # reads VOYAGE_API_KEY from the environment at import time
-                # (when the module-level `store = VectorStore()` runs), so if
-                # load_dotenv() ran after that import, the key wouldn't exist
-                # in os.environ yet and the client would silently stay unset.
+load_dotenv()  
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,12 +15,9 @@ from orchestrator import answer_question
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 app = FastAPI(title="RAG Document Chat API")
 
-# CORS: allows the frontend (running on a different port during dev, e.g.
-# localhost:5173) to call this backend (e.g. localhost:8000). Browsers block
-# cross-origin requests by default; this explicitly allows it.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # for a portfolio demo; in production you'd list exact domains
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -91,7 +74,5 @@ def chat(request: ChatRequest):
 
 @app.delete("/clear")
 def clear_documents():
-    """Resets the in-memory store — handy while testing, since restarting the
-    server also clears it (nothing is persisted to disk)."""
     store.clear()
     return {"status": "cleared"}
