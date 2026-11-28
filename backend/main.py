@@ -15,6 +15,9 @@ from orchestrator import answer_question
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 app = FastAPI(title="RAG Document Chat API")
 
+# CORS: allows the frontend (running on a different port during dev, e.g.
+# localhost:5173) to call this backend (e.g. localhost:8000). Browsers block
+# cross-origin requests by default; this explicitly allows it.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -74,5 +77,7 @@ def chat(request: ChatRequest):
 
 @app.delete("/clear")
 def clear_documents():
+    """Resets the in-memory store — handy while testing, since restarting the
+    server also clears it (nothing is persisted to disk)."""
     store.clear()
     return {"status": "cleared"}
