@@ -26,9 +26,9 @@ import numpy as np
 @dataclass
 class Chunk:
     """One piece of a document, plus metadata about where it came from."""
-    id: str                # e.g. "doc1_chunk_3" — unique identifier
-    text: str               # the actual chunk text
-    doc_name: str           # which document this came from (for citations)
+    id: str                
+    text: str               
+    doc_name: str           # which document this came from 
     chunk_index: int        # position in the document (0, 1, 2, ...)
     embedding: list = field(default=None, repr=False)  # filled in later
 
